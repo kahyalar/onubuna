@@ -8,13 +8,13 @@
 
 import Foundation
 
-struct Normal: Decodable {
-    let rates: Rate?
+struct Noncrypto: Decodable {
+    let rates: Rates
 }
 
-struct Rate: Decodable {
-    var tl: Double?
-    var usd: Double?
+struct Rates: Decodable {
+    let TRY: Double
+    let USD: Double
 }
 
 struct Crypto: Decodable {

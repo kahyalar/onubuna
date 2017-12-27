@@ -23,14 +23,12 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     
     var prices: Dictionary =
     [
-        Currencies.btc.rawValue: -1.0,
-        Currencies.eth.rawValue: -1.0,
-        Currencies.eur.rawValue: -1.0,
-        Currencies.tl.rawValue: -1.0,
-        Currencies.usd.rawValue: -1.0
+        Currencies.btc.rawValue: 0.0,
+        Currencies.eth.rawValue: 0.0,
+        Currencies.eur.rawValue: 1.0,
+        Currencies.tl.rawValue: 0.0,
+        Currencies.usd.rawValue: 0.0
     ]
-    
-    var cryptoPrices = [Crypto]()
     
     func getCurrencyDatas(){
         getNonCryptoCurrencyData()
@@ -42,10 +40,9 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         Alamofire.request(url!).responseJSON { response in
             let data = response.data
             do {
-                self.cryptoPrices = try JSONDecoder().decode([Crypto].self, from: data!)
-                for currency in self.cryptoPrices {
-                    self.prices.updateValue(Double(currency.price_eur)!, forKey: currency.symbol)
-                }
+                let noncryptoPrices = try JSONDecoder().decode(Noncrypto.self, from: data!)
+                self.prices.updateValue(1/(noncryptoPrices.rates.TRY), forKey: Currencies.tl.rawValue)
+                self.prices.updateValue(1/(noncryptoPrices.rates.USD), forKey: Currencies.usd.rawValue)
             } catch {
                 print("Error!")
             }
@@ -58,8 +55,8 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         Alamofire.request(url!).responseJSON { response in
             let data = response.data
             do {
-                self.cryptoPrices = try JSONDecoder().decode([Crypto].self, from: data!)
-                for currency in self.cryptoPrices {
+                let cryptoPrices = try JSONDecoder().decode([Crypto].self, from: data!)
+                for currency in cryptoPrices {
                     self.prices.updateValue(Double(currency.price_eur)!, forKey: currency.symbol)
                 }
             } catch {
