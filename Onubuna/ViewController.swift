@@ -14,30 +14,39 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     @IBOutlet weak var inputCurrency: UITextField!
     @IBOutlet weak var inputAmount: UITextField!
     @IBOutlet weak var outputCurrency: UITextField!
-    @IBOutlet weak var outputAmount: UITextField!
+    @IBOutlet weak var outputAmount: UILabel!
     @IBOutlet weak var buttonConvert: UIButton!
     
-    let inputPickerView = UIPickerView()
-    let outputPickerView = UIPickerView()
+    let pickerView = UIPickerView()
     let currencies = Currencies.getAllCurrencies()
     
     var prices: Dictionary =
-    [
-        Currencies.btc.rawValue: 0.0,
-        Currencies.eth.rawValue: 0.0,
-        Currencies.eur.rawValue: 1.0,
-        Currencies.tl.rawValue: 0.0,
-        Currencies.usd.rawValue: 0.0
+        [
+            Currencies.btc.rawValue: 0.0,
+            Currencies.eth.rawValue: 0.0,
+            Currencies.eur.rawValue: 1.0,
+            Currencies.tl.rawValue: 0.0,
+            Currencies.usd.rawValue: 0.0
     ]
     
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        getCurrencyDatas()
+        createPickerView()
+    }
+
     func getCurrencyDatas(){
         getNonCryptoCurrencyData()
         getCryptoCurrencyData()
     }
     
     func getNonCryptoCurrencyData(){
-        let url = URL(string: "https://api.fixer.io/latest?symbols=USD,TRY?base=EUR")
-        Alamofire.request(url!).responseJSON { response in
+        guard let url = URL(string: "https://api.fixer.io/latest?symbols=USD,TRY?base=EUR") else {
+            
+            return
+        }
+        
+        Alamofire.request(url).responseJSON { response in
             let data = response.data
             do {
                 let noncryptoPrices = try JSONDecoder().decode(Noncrypto.self, from: data!)
@@ -65,26 +74,14 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
         }
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        getCurrencyDatas()
-        disableOutputAmountTextField()
-        createPickerView()
-    }
-    
-    func disableOutputAmountTextField(){
-        outputAmount.isUserInteractionEnabled = false
-    }
-    
     func createPickerView(){
-        inputPickerView.delegate = self
-        outputPickerView.delegate = self
-        inputCurrency.inputView = inputPickerView
-        outputCurrency.inputView = outputPickerView
+        pickerView.delegate = self
+        inputCurrency.inputView = pickerView
+        outputCurrency.inputView = pickerView
     }
     
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
-        return 1
+        return 2
     }
     
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
@@ -96,7 +93,7 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     }
     
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
-        if pickerView == inputPickerView{
+        if component == 0{
             inputCurrency.text = currencies[row].rawValue
         }
         else{
@@ -110,23 +107,19 @@ class ViewController: UIViewController, UIPickerViewDelegate, UIPickerViewDataSo
     }
     
     @IBAction func actionConvert(_ sender: UIButton) {
-        if self.inputCurrency.hasText && self.outputCurrency.hasText && self.inputAmount.hasText{
-            let inputCurrency = self.inputCurrency.text
-            let inputAmount = self.inputAmount.text
-            let outputCurrency = self.outputCurrency.text
-            let result = Double(self.prices[inputCurrency!]!) * Double(inputAmount!)! / Double(self.prices[outputCurrency!]!)
-            self.outputAmount.text = String(format: "%.5f",result)
-        }
-        else {
-            let alert = UIAlertController(title: "Whoops", message: "Please fill all fields before converting!", preferredStyle: UIAlertControllerStyle.alert)
-            alert.addAction(UIAlertAction(title: "Click", style: UIAlertActionStyle.default, handler: nil))
-            self.present(alert, animated: true, completion: nil)
-        }
+        guard let inputCurrencyContent = self.inputCurrency.text, !inputCurrencyContent.isEmpty else { self.alertInputMissing(); return }
+        guard let outputCurrencyContent = self.outputCurrency.text, !outputCurrencyContent.isEmpty else { self.alertInputMissing(); return }
+        guard let inputAmountContent = self.inputAmount.text, !inputAmountContent.isEmpty else { self.alertInputMissing(); return }
         
+        let result = Double(self.prices[inputCurrencyContent]!) * Double(inputAmountContent)! / Double(self.prices[outputCurrencyContent]!)
+        self.outputAmount.text = String(format: "%.5f \(outputCurrencyContent)",result)
     }
     
-    
-    
-
+    func alertInputMissing()
+    {
+        let alert = UIAlertController(title: "Whoops", message: "Please fill all fields before converting!", preferredStyle: UIAlertControllerStyle.alert)
+        alert.addAction(UIAlertAction(title: "Try again!", style: UIAlertActionStyle.default, handler: nil))
+        self.present(alert, animated: true, completion: nil)
+    }
 }
 
